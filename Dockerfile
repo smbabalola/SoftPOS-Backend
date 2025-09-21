@@ -14,28 +14,17 @@ RUN apt-get update \
         postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Poetry
-RUN pip install poetry==1.6.1
-
-# Configure Poetry
-ENV POETRY_NO_INTERACTION=1 \
-    POETRY_VENV_IN_PROJECT=1 \
-    POETRY_CACHE_DIR=/tmp/poetry_cache
-
 # Set work directory
 WORKDIR /app
 
-# Copy Poetry files
-COPY pyproject.toml poetry.lock ./
+# Copy requirements file
+COPY requirements.txt .
 
 # Install Python dependencies
-RUN poetry install --only=main --no-root && rm -rf $POETRY_CACHE_DIR
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
-
-# Install the application
-RUN poetry install --only=main
 
 # Create non-root user
 RUN adduser --disabled-password --gecos '' --shell /bin/bash user \
@@ -50,4 +39,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
 # Run the application
-CMD ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
