@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoftPOS Customer Service Console</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-green-900 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <h1 class="text-xl font-bold">SoftPOS Customer Service</h1>
+                    </div>
+                    <div class="hidden md:ml-10 md:flex md:space-x-8">
+                        <a href="#dashboard" class="px-3 py-2 rounded-md text-sm font-medium bg-green-800">Dashboard</a>
+                        <a href="#tickets" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-green-800">Support Tickets</a>
+                        <a href="#merchants" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-green-800">Merchant Lookup</a>
+                        <a href="#transactions" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-green-800">Transaction Search</a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-sm">
+                        <span class="bg-green-800 px-2 py-1 rounded">Queue: 12</span>
+                    </div>
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" class="flex items-center space-x-2 hover:bg-green-800 px-3 py-2 rounded-md">
+                            <i class="fas fa-headset"></i>
+                            <span>CS Agent Sarah</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                            <a href="#profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Profile</a>
+                            <a href="#settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
+                            <hr class="my-1">
+                            <a href="#logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Sign Out</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="flex h-screen pt-16" x-data="csConsole()">
+        <!-- Sidebar -->
+        <div class="w-64 bg-white shadow-lg">
+            <div class="p-4">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4">Support Tools</h2>
+                <nav class="space-y-2">
+                    <button @click="activeTab = 'dashboard'"
+                            :class="activeTab === 'dashboard' ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:bg-gray-100'"
+                            class="w-full text-left px-3 py-2 rounded-md flex items-center space-x-2">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Dashboard</span>
+                    </button>
+
+                    <button @click="activeTab = 'tickets'"
+                            :class="activeTab === 'tickets' ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:bg-gray-100'"
+                            class="w-full text-left px-3 py-2 rounded-md flex items-center space-x-2">
+                        <i class="fas fa-ticket-alt"></i>
+                        <span>Support Tickets</span>
+                        <span x-show="openTickets.length > 0" class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-1" x-text="openTickets.length"></span>
+                    </button>
+
+                    <button @click="activeTab = 'merchant-search'"
+                            :class="activeTab === 'merchant-search' ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:bg-gray-100'"
+                            class="w-full text-left px-3 py-2 rounded-md flex items-center space-x-2">
+                        <i class="fas fa-search"></i>
+                        <span>Merchant Lookup</span>
+                    </button>
+
+                    <button @click="activeTab = 'transaction-search'"
+                            :class="activeTab === 'transaction-search' ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:bg-gray-100'"
+                            class="w-full text-left px-3 py-2 rounded-md flex items-center space-x-2">
+                        <i class="fas fa-credit-card"></i>
+                        <span>Transaction Search</span>
+                    </button>
+
+                    <button @click="activeTab = 'refunds'"
+                            :class="activeTab === 'refunds' ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:bg-gray-100'"
+                            class="w-full text-left px-3 py-2 rounded-md flex items-center space-x-2">
+                        <i class="fas fa-undo"></i>
+                        <span>Process Refunds</span>
+                    </button>
+
+                    <button @click="activeTab = 'knowledge-base'"
+                            :class="activeTab === 'knowledge-base' ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:bg-gray-100'"
+                            class="w-full text-left px-3 py-2 rounded-md flex items-center space-x-2">
+                        <i class="fas fa-book"></i>
+                        <span>Knowledge Base</span>
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 overflow-y-auto p-6">
+            <!-- Dashboard Tab -->
+            <div x-show="activeTab === 'dashboard'" class="space-y-6">
+                <div class="mb-6">
+                    <h1 class="text-2xl font-bold text-gray-900">Customer Service Dashboard</h1>
+                    <p class="text-gray-600">Support metrics and active tickets</p>
+                </div>
+
+                <!-- Metrics Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border">
+                        <div class="flex items-center">
+                            <div class="p-2 bg-green-100 rounded-lg">
+                                <i class="fas fa-ticket-alt text-green-600"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600">Open Tickets</p>
+                                <p class="text-2xl font-bold text-gray-900" x-text="stats.openTickets"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow-sm border">
+                        <div class="flex items-center">
+                            <div class="p-2 bg-blue-100 rounded-lg">
+                                <i class="fas fa-clock text-blue-600"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600">Avg Response Time</p>
+                                <p class="text-2xl font-bold text-gray-900" x-text="stats.avgResponseTime"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow-sm border">
+                        <div class="flex items-center">
+                            <div class="p-2 bg-yellow-100 rounded-lg">
+                                <i class="fas fa-check-circle text-yellow-600"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600">Resolved Today</p>
+                                <p class="text-2xl font-bold text-gray-900" x-text="stats.resolvedToday"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow-sm border">
+                        <div class="flex items-center">
+                            <div class="p-2 bg-purple-100 rounded-lg">
+                                <i class="fas fa-star text-purple-600"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600">Satisfaction Score</p>
+                                <p class="text-2xl font-bold text-gray-900" x-text="stats.satisfactionScore + '%'"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+                    <div class="space-y-3">
+                        <template x-for="activity in recentActivity" :key="activity.id">
+                            <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                                    <i class="fas fa-user text-green-600 text-sm"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm text-gray-900" x-text="activity.description"></p>
+                                    <p class="text-xs text-gray-500" x-text="activity.timestamp"></p>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Merchant Search Tab -->
+            <div x-show="activeTab === 'merchant-search'" class="space-y-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Merchant Lookup</h1>
+                    <p class="text-gray-600">Search and view merchant information</p>
+                </div>
+
+                <!-- Search Form -->
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Merchant ID</label>
+                            <input type="text" x-model="merchantSearch.merchantId"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                                   placeholder="Enter merchant ID">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                            <input type="email" x-model="merchantSearch.email"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                                   placeholder="Enter email address">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Trading Name</label>
+                            <input type="text" x-model="merchantSearch.tradingName"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                                   placeholder="Enter trading name">
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <button @click="searchMerchants()" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
+                            <i class="fas fa-search mr-2"></i>Search
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Search Results -->
+                <div x-show="merchantResults.length > 0" class="bg-white rounded-lg shadow-sm border overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Merchant</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tier</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Transaction</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <template x-for="merchant in merchantResults" :key="merchant.id">
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900" x-text="merchant.trading_name"></div>
+                                            <div class="text-sm text-gray-500" x-text="merchant.legal_name"></div>
+                                            <div class="text-xs text-gray-400" x-text="'ID: ' + merchant.id"></div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+                                              :class="merchant.status === 'active' ? 'bg-green-100 text-green-800' :
+                                                      merchant.status === 'suspended' ? 'bg-red-100 text-red-800' :
+                                                      'bg-yellow-100 text-yellow-800'"
+                                              x-text="merchant.status"></span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="merchant.tier"></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="merchant.last_transaction"></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <button @click="viewMerchantDetails(merchant)" class="text-green-600 hover:text-green-900 mr-3">View Details</button>
+                                        <button @click="createTicket(merchant)" class="text-blue-600 hover:text-blue-900">Create Ticket</button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Transaction Search Tab -->
+            <div x-show="activeTab === 'transaction-search'" class="space-y-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Transaction Search</h1>
+                    <p class="text-gray-600">Search and manage transaction records</p>
+                </div>
+
+                <!-- Search Form -->
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Transaction ID</label>
+                            <input type="text" x-model="transactionSearch.transactionId"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                                   placeholder="Enter transaction ID">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Card Last 4</label>
+                            <input type="text" x-model="transactionSearch.cardLast4" maxlength="4"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                                   placeholder="****">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Amount</label>
+                            <input type="number" x-model="transactionSearch.amount" step="0.01"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                                   placeholder="Amount">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
+                            <select x-model="transactionSearch.dateRange"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                                <option value="today">Today</option>
+                                <option value="week">Last 7 days</option>
+                                <option value="month">Last 30 days</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <button @click="searchTransactions()" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
+                            <i class="fas fa-search mr-2"></i>Search Transactions
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Transaction Results -->
+                <div x-show="transactionResults.length > 0" class="bg-white rounded-lg shadow-sm border overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Merchant</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <template x-for="transaction in transactionResults" :key="transaction.id">
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900" x-text="transaction.id"></div>
+                                            <div class="text-sm text-gray-500" x-text="'****' + transaction.card_last_4"></div>
+                                            <div class="text-xs text-gray-400" x-text="transaction.created_at"></div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="transaction.merchant_name"></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="'£' + (transaction.amount / 100).toFixed(2)"></td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+                                              :class="transaction.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                                      transaction.status === 'failed' ? 'bg-red-100 text-red-800' :
+                                                      'bg-yellow-100 text-yellow-800'"
+                                              x-text="transaction.status"></span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <button @click="viewTransaction(transaction)" class="text-green-600 hover:text-green-900 mr-3">View</button>
+                                        <button x-show="transaction.status === 'completed' && transaction.amount <= 20000"
+                                                @click="initiateRefund(transaction)" class="text-blue-600 hover:text-blue-900 mr-3">Refund</button>
+                                        <button @click="resendReceipt(transaction)" class="text-purple-600 hover:text-purple-900">Resend Receipt</button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Refunds Tab -->
+            <div x-show="activeTab === 'refunds'" class="space-y-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Process Refunds</h1>
+                    <p class="text-gray-600">Issue refunds for customer transactions (up to £200)</p>
+                </div>
+
+                <!-- Refund Form -->
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Transaction ID</label>
+                            <input type="text" x-model="refundForm.transactionId"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                                   placeholder="Enter transaction ID">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Refund Amount (£)</label>
+                            <input type="number" x-model="refundForm.amount" step="0.01" max="200"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                                   placeholder="Max £200">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Reason for Refund</label>
+                            <textarea x-model="refundForm.reason" rows="3"
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                                      placeholder="Provide detailed reason for the refund"></textarea>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex space-x-3">
+                        <button @click="processRefund()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                            <i class="fas fa-undo mr-2"></i>Process Refund
+                        </button>
+                        <button @click="clearRefundForm()" class="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700">
+                            Clear Form
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function csConsole() {
+            return {
+                activeTab: 'dashboard',
+                stats: {
+                    openTickets: 12,
+                    avgResponseTime: '15 min',
+                    resolvedToday: 28,
+                    satisfactionScore: 94
+                },
+                recentActivity: [
+                    {
+                        id: 1,
+                        description: 'Resolved ticket #1247 for Café Mocha',
+                        timestamp: '10 minutes ago'
+                    },
+                    {
+                        id: 2,
+                        description: 'Issued £45.00 refund for transaction TXN_123456',
+                        timestamp: '25 minutes ago'
+                    },
+                    {
+                        id: 3,
+                        description: 'Created ticket #1248 for payment issue',
+                        timestamp: '1 hour ago'
+                    }
+                ],
+                openTickets: [
+                    {
+                        id: 1247,
+                        merchant: 'Café Mocha',
+                        subject: 'Payment not processing',
+                        priority: 'high',
+                        created: '2024-01-15 14:30'
+                    }
+                ],
+                merchantSearch: {
+                    merchantId: '',
+                    email: '',
+                    tradingName: ''
+                },
+                merchantResults: [],
+                transactionSearch: {
+                    transactionId: '',
+                    cardLast4: '',
+                    amount: '',
+                    dateRange: 'today'
+                },
+                transactionResults: [],
+                refundForm: {
+                    transactionId: '',
+                    amount: '',
+                    reason: ''
+                },
+
+                searchMerchants() {
+                    // Mock search results
+                    this.merchantResults = [
+                        {
+                            id: 'MER_001',
+                            trading_name: 'Café Mocha',
+                            legal_name: 'Mocha Coffee Ltd',
+                            status: 'active',
+                            tier: 'Standard',
+                            last_transaction: '2024-01-15 16:30'
+                        },
+                        {
+                            id: 'MER_002',
+                            trading_name: 'Quick Eats',
+                            legal_name: 'Quick Eats Restaurant Ltd',
+                            status: 'suspended',
+                            tier: 'Basic',
+                            last_transaction: '2024-01-14 12:15'
+                        }
+                    ];
+                },
+
+                searchTransactions() {
+                    // Mock search results
+                    this.transactionResults = [
+                        {
+                            id: 'TXN_123456',
+                            merchant_name: 'Café Mocha',
+                            amount: 2450,
+                            status: 'completed',
+                            card_last_4: '1234',
+                            created_at: '2024-01-15 16:30'
+                        },
+                        {
+                            id: 'TXN_123457',
+                            merchant_name: 'Quick Eats',
+                            amount: 1850,
+                            status: 'failed',
+                            card_last_4: '5678',
+                            created_at: '2024-01-15 15:45'
+                        }
+                    ];
+                },
+
+                processRefund() {
+                    if (!this.refundForm.transactionId || !this.refundForm.amount || !this.refundForm.reason) {
+                        alert('Please fill in all fields');
+                        return;
+                    }
+
+                    if (parseFloat(this.refundForm.amount) > 200) {
+                        alert('Refund amount cannot exceed £200. For larger refunds, escalate to CS Lead.');
+                        return;
+                    }
+
+                    // Process refund logic here
+                    alert(`Refund of £${this.refundForm.amount} processed for transaction ${this.refundForm.transactionId}`);
+                    this.clearRefundForm();
+                },
+
+                clearRefundForm() {
+                    this.refundForm = {
+                        transactionId: '',
+                        amount: '',
+                        reason: ''
+                    };
+                },
+
+                viewMerchantDetails(merchant) {
+                    console.log('Viewing merchant:', merchant);
+                },
+
+                initiateRefund(transaction) {
+                    this.activeTab = 'refunds';
+                    this.refundForm.transactionId = transaction.id;
+                    this.refundForm.amount = (transaction.amount / 100).toFixed(2);
+                },
+
+                resendReceipt(transaction) {
+                    alert(`Receipt resent for transaction ${transaction.id}`);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,763 @@
+# RBAC Configuration for SoftPOS Platform
+# Defines roles, permissions, and security policies
+
+roles:
+  # ========== PLATFORM ADMIN ROLES ==========
+  super_admin:
+    name: "super_admin"
+    display_name: "Super Admin"
+    description: "Full platform administration access"
+    user_type: "platform_admin"
+    is_system_role: true
+    requires_2fa: true
+    requires_hardware_key: true
+    session_timeout_minutes: 240  # 4 hours
+    requires_dual_control: true
+    ui_config:
+      console_type: "admin"
+      dashboard_sections: ["system", "merchants", "transactions", "monitoring", "security"]
+    feature_flags:
+      can_access_all_data: true
+      can_kill_switch: true
+      can_export_sensitive: true
+
+  customer_service_agent:
+    name: "customer_service_agent"
+    display_name: "Customer Service Agent"
+    description: "Customer support and basic merchant assistance"
+    user_type: "platform_admin"
+    requires_2fa: true
+    session_timeout_minutes: 480  # 8 hours
+    max_transaction_amount: 20000  # £200 in pence
+    ui_config:
+      console_type: "support"
+      dashboard_sections: ["merchants", "transactions", "support_tickets"]
+    feature_flags:
+      can_view_masked_pan: true
+      can_create_support_tickets: true
+
+  customer_service_lead:
+    name: "customer_service_lead"
+    display_name: "Customer Service Lead"
+    description: "Senior customer support with elevated permissions"
+    user_type: "platform_admin"
+    parent_role: "customer_service_agent"
+    requires_2fa: true
+    max_transaction_amount: 100000  # £1000 in pence
+    requires_dual_control: true
+    ui_config:
+      console_type: "support"
+      dashboard_sections: ["merchants", "transactions", "support_tickets", "reports"]
+    feature_flags:
+      can_approve_large_refunds: true
+      can_export_limited_data: true
+
+  risk_analyst:
+    name: "risk_analyst"
+    display_name: "Risk Analyst"
+    description: "Risk monitoring and fraud prevention"
+    user_type: "platform_admin"
+    requires_2fa: true
+    session_timeout_minutes: 480
+    ui_config:
+      console_type: "risk"
+      dashboard_sections: ["risk_monitoring", "fraud_alerts", "device_security"]
+    feature_flags:
+      can_view_risk_scores: true
+      can_place_holds: true
+      can_manage_velocity_rules: true
+
+  risk_lead:
+    name: "risk_lead"
+    display_name: "Risk Lead"
+    description: "Senior risk management and policy setting"
+    user_type: "platform_admin"
+    parent_role: "risk_analyst"
+    requires_2fa: true
+    requires_dual_control: true
+    ui_config:
+      console_type: "risk"
+      dashboard_sections: ["risk_monitoring", "fraud_alerts", "device_security", "policy_management"]
+    feature_flags:
+      can_edit_global_rules: true
+      can_approve_tier_upgrades: true
+
+  compliance_officer:
+    name: "compliance_officer"
+    display_name: "Compliance Officer / MLRO"
+    description: "AML/KYC compliance and regulatory oversight"
+    user_type: "platform_admin"
+    requires_2fa: true
+    requires_hardware_key: true
+    requires_ip_allowlist: true
+    session_timeout_minutes: 240
+    ui_config:
+      console_type: "compliance"
+      dashboard_sections: ["kyc_queue", "aml_monitoring", "sanctions_screening", "reporting"]
+    feature_flags:
+      can_access_kyc_documents: true
+      can_submit_sar: true
+      can_freeze_merchants: true
+
+  kyc_ops_agent:
+    name: "kyc_ops_agent"
+    display_name: "KYC/KYB Operations Agent"
+    description: "Identity verification and document review"
+    user_type: "platform_admin"
+    requires_2fa: true
+    session_timeout_minutes: 480
+    ui_config:
+      console_type: "kyc"
+      dashboard_sections: ["kyc_queue", "document_review", "tier_management"]
+    feature_flags:
+      can_review_documents: true
+      can_approve_tier_changes: true
+
+  disputes_specialist:
+    name: "disputes_specialist"
+    display_name: "Disputes/Chargeback Specialist"
+    description: "Chargeback and dispute management"
+    user_type: "platform_admin"
+    requires_2fa: true
+    session_timeout_minutes: 480
+    ui_config:
+      console_type: "disputes"
+      dashboard_sections: ["chargeback_queue", "evidence_management", "representments"]
+    feature_flags:
+      can_manage_chargebacks: true
+      can_upload_evidence: true
+
+  finance_user:
+    name: "finance_user"
+    display_name: "Finance & Reconciliation"
+    description: "Financial operations and reconciliation"
+    user_type: "platform_admin"
+    requires_2fa: true
+    requires_ip_allowlist: true
+    session_timeout_minutes: 480
+    ui_config:
+      console_type: "finance"
+      dashboard_sections: ["payouts", "reconciliation", "ledgers", "reporting"]
+    feature_flags:
+      can_view_financials: true
+      can_export_financial_data: true
+
+  finance_lead:
+    name: "finance_lead"
+    display_name: "Finance Lead / Treasurer"
+    description: "Senior financial operations and treasury"
+    user_type: "platform_admin"
+    parent_role: "finance_user"
+    requires_2fa: true
+    requires_hardware_key: true
+    requires_dual_control: true
+    ui_config:
+      console_type: "finance"
+      dashboard_sections: ["payouts", "reconciliation", "ledgers", "reporting", "treasury"]
+    feature_flags:
+      can_approve_large_payouts: true
+      can_configure_banking_rails: true
+
+  technical_ops:
+    name: "technical_ops"
+    display_name: "Technical Operations / SRE"
+    description: "Infrastructure and system operations"
+    user_type: "platform_admin"
+    requires_2fa: true
+    session_timeout_minutes: 240
+    ui_config:
+      console_type: "ops"
+      dashboard_sections: ["system_health", "logs", "infrastructure", "incidents"]
+    feature_flags:
+      can_access_infrastructure: true
+      can_view_system_logs: true
+      jit_access_required: true
+
+  developer:
+    name: "developer"
+    display_name: "Developer"
+    description: "Development team with limited production access"
+    user_type: "platform_admin"
+    requires_2fa: true
+    session_timeout_minutes: 240
+    ui_config:
+      console_type: "dev"
+      dashboard_sections: ["api_logs", "feature_flags", "staging_data"]
+    feature_flags:
+      read_only_prod: true
+      jit_access_required: true
+
+  product_analytics:
+    name: "product_analytics"
+    display_name: "Product/Analytics"
+    description: "Product insights and data analytics"
+    user_type: "platform_admin"
+    requires_2fa: true
+    session_timeout_minutes: 480
+    ui_config:
+      console_type: "analytics"
+      dashboard_sections: ["business_intelligence", "product_metrics", "user_analytics"]
+    feature_flags:
+      can_access_aggregated_data: true
+      can_export_anonymized_data: true
+
+  auditor:
+    name: "auditor"
+    display_name: "External/Internal Auditor"
+    description: "Audit and compliance review access"
+    user_type: "external_auditor"
+    requires_2fa: true
+    session_timeout_minutes: 480
+    ui_config:
+      console_type: "audit"
+      dashboard_sections: ["audit_trails", "compliance_reports", "control_matrices"]
+    feature_flags:
+      read_only_access: true
+      time_boxed_access: true
+
+  # ========== MERCHANT USER ROLES ==========
+  merchant_owner:
+    name: "merchant_owner"
+    display_name: "Merchant Owner"
+    description: "Full merchant account administration"
+    user_type: "merchant_user"
+    requires_2fa: true
+    session_timeout_minutes: 480
+    ui_config:
+      console_type: "merchant"
+      dashboard_sections: ["dashboard", "transactions", "payouts", "settings", "staff", "reports"]
+    feature_flags:
+      can_manage_all_merchant_data: true
+      can_manage_staff: true
+      can_configure_webhooks: true
+
+  merchant_manager:
+    name: "merchant_manager"
+    display_name: "Merchant Manager"
+    description: "Merchant operations management"
+    user_type: "merchant_user"
+    requires_2fa: true
+    max_transaction_amount: 20000  # £200
+    session_timeout_minutes: 480
+    ui_config:
+      console_type: "merchant"
+      dashboard_sections: ["dashboard", "transactions", "staff", "reports"]
+    feature_flags:
+      can_manage_staff: true
+      can_view_transactions: true
+
+  merchant_staff:
+    name: "merchant_staff"
+    display_name: "Staff / Cashier"
+    description: "Point of sale operations"
+    user_type: "merchant_user"
+    requires_2fa: false
+    session_timeout_minutes: 720  # 12 hours for shift work
+    ui_config:
+      console_type: "pos"
+      dashboard_sections: ["pos", "sales_summary"]
+    feature_flags:
+      can_process_payments: true
+      device_binding_required: true
+
+  merchant_accountant:
+    name: "merchant_accountant"
+    display_name: "Merchant Accountant"
+    description: "Financial reporting and reconciliation"
+    user_type: "merchant_user"
+    requires_2fa: true
+    session_timeout_minutes: 480
+    ui_config:
+      console_type: "merchant"
+      dashboard_sections: ["reports", "payouts", "fees", "reconciliation"]
+    feature_flags:
+      can_view_financial_reports: true
+      cannot_transact: true
+
+  merchant_developer:
+    name: "merchant_developer"
+    display_name: "Merchant Developer"
+    description: "API and integration management"
+    user_type: "merchant_user"
+    requires_2fa: true
+    session_timeout_minutes: 480
+    ui_config:
+      console_type: "merchant_api"
+      dashboard_sections: ["api_keys", "webhooks", "integration_logs", "sandbox"]
+    feature_flags:
+      can_manage_api_keys: true
+      can_access_sandbox: true
+
+  platform_partner:
+    name: "platform_partner"
+    display_name: "Platform/Marketplace Owner"
+    description: "Multi-merchant platform management"
+    user_type: "partner_user"
+    requires_2fa: true
+    session_timeout_minutes: 480
+    ui_config:
+      console_type: "platform"
+      dashboard_sections: ["sub_merchants", "performance", "fee_splits", "analytics"]
+    feature_flags:
+      can_onboard_sub_merchants: true
+      can_view_aggregated_performance: true
+
+permissions:
+  # ========== TRANSACTION PERMISSIONS ==========
+  transaction_read:
+    name: "transaction_read"
+    display_name: "View Transactions"
+    description: "Read access to transaction data"
+    resource_type: "transaction"
+    action: "read"
+    conditions:
+      data_fields: ["amount", "status", "merchant_id", "created_at", "reference"]
+      masked_fields: ["card_number"]
+
+  transaction_read_sensitive:
+    name: "transaction_read_sensitive"
+    display_name: "View Sensitive Transaction Data"
+    description: "Read access to sensitive transaction fields"
+    resource_type: "transaction"
+    action: "read_sensitive"
+    conditions:
+      additional_fields: ["card_last_four", "bin", "device_data"]
+
+  transaction_refund_small:
+    name: "transaction_refund_small"
+    display_name: "Create Small Refunds"
+    description: "Create refunds up to £200"
+    resource_type: "transaction"
+    action: "refund"
+    max_amount: 20000  # £200 in pence
+    rate_limit_per_hour: 50
+
+  transaction_refund_large:
+    name: "transaction_refund_large"
+    display_name: "Create Large Refunds"
+    description: "Create refunds above £200"
+    resource_type: "transaction"
+    action: "refund"
+    max_amount: 500000  # £5000 in pence
+    requires_approval: true
+    approval_chain: ["finance_lead", "risk_lead"]
+
+  transaction_void:
+    name: "transaction_void"
+    display_name: "Void Transactions"
+    description: "Void pending transactions"
+    resource_type: "transaction"
+    action: "void"
+    conditions:
+      status_required: ["pending", "authorized"]
+
+  transaction_export:
+    name: "transaction_export"
+    display_name: "Export Transaction Data"
+    description: "Export transaction data to CSV/Excel"
+    resource_type: "transaction"
+    action: "export"
+    rate_limit_per_day: 10
+
+  # ========== MERCHANT PERMISSIONS ==========
+  merchant_read:
+    name: "merchant_read"
+    display_name: "View Merchant Data"
+    description: "Read access to merchant information"
+    resource_type: "merchant"
+    action: "read"
+
+  merchant_update_settings:
+    name: "merchant_update_settings"
+    display_name: "Update Merchant Settings"
+    description: "Modify merchant configuration"
+    resource_type: "merchant"
+    action: "update_settings"
+    requires_ownership: true
+
+  merchant_manage_staff:
+    name: "merchant_manage_staff"
+    display_name: "Manage Merchant Staff"
+    description: "Add/remove merchant staff members"
+    resource_type: "merchant"
+    action: "manage_staff"
+    requires_ownership: true
+
+  merchant_place_hold:
+    name: "merchant_place_hold"
+    display_name: "Place Merchant Hold"
+    description: "Temporarily suspend merchant operations"
+    resource_type: "merchant"
+    action: "place_hold"
+    requires_approval: true
+    approval_chain: ["risk_lead"]
+
+  merchant_freeze_aml:
+    name: "merchant_freeze_aml"
+    display_name: "Freeze Merchant (AML)"
+    description: "Freeze merchant for AML compliance"
+    resource_type: "merchant"
+    action: "freeze"
+    requires_approval: true
+    approval_chain: ["compliance_officer"]
+
+  # ========== PAYOUT PERMISSIONS ==========
+  payout_read:
+    name: "payout_read"
+    display_name: "View Payouts"
+    description: "Read access to payout data"
+    resource_type: "payout"
+    action: "read"
+
+  payout_approve_standard:
+    name: "payout_approve_standard"
+    display_name: "Approve Standard Payouts"
+    description: "Approve payouts up to £10,000"
+    resource_type: "payout"
+    action: "approve"
+    max_amount: 1000000  # £10,000 in pence
+
+  payout_approve_large:
+    name: "payout_approve_large"
+    display_name: "Approve Large Payouts"
+    description: "Approve payouts above £10,000"
+    resource_type: "payout"
+    action: "approve"
+    requires_approval: true
+    approval_chain: ["finance_lead"]
+
+  payout_schedule_modify:
+    name: "payout_schedule_modify"
+    display_name: "Modify Payout Schedule"
+    description: "Change merchant payout frequency"
+    resource_type: "payout"
+    action: "modify_schedule"
+    requires_approval: true
+    approval_chain: ["finance_lead", "risk_lead"]
+
+  # ========== KYC/COMPLIANCE PERMISSIONS ==========
+  kyc_document_read:
+    name: "kyc_document_read"
+    display_name: "View KYC Documents"
+    description: "Access to identity verification documents"
+    resource_type: "kyc_document"
+    action: "read"
+
+  kyc_document_approve:
+    name: "kyc_document_approve"
+    display_name: "Approve KYC Documents"
+    description: "Approve or reject identity documents"
+    resource_type: "kyc_document"
+    action: "approve"
+
+  kyc_tier_upgrade:
+    name: "kyc_tier_upgrade"
+    display_name: "Approve Tier Upgrades"
+    description: "Approve merchant tier upgrades"
+    resource_type: "merchant"
+    action: "tier_upgrade"
+    requires_approval: true
+    approval_chain: ["compliance_officer"]
+
+  # ========== DISPUTE PERMISSIONS ==========
+  dispute_read:
+    name: "dispute_read"
+    display_name: "View Disputes"
+    description: "Read access to dispute/chargeback data"
+    resource_type: "dispute"
+    action: "read"
+
+  dispute_manage:
+    name: "dispute_manage"
+    display_name: "Manage Disputes"
+    description: "Handle dispute lifecycle and evidence"
+    resource_type: "dispute"
+    action: "manage"
+
+  dispute_representment:
+    name: "dispute_representment"
+    display_name: "Submit Representments"
+    description: "Submit dispute representments to schemes"
+    resource_type: "dispute"
+    action: "representment"
+
+  # ========== SYSTEM PERMISSIONS ==========
+  system_config_read:
+    name: "system_config_read"
+    display_name: "View System Configuration"
+    description: "Read system configuration settings"
+    resource_type: "system_config"
+    action: "read"
+
+  system_config_update:
+    name: "system_config_update"
+    display_name: "Update System Configuration"
+    description: "Modify system configuration"
+    resource_type: "system_config"
+    action: "update"
+    requires_approval: true
+    approval_chain: ["super_admin"]
+
+  kill_switch:
+    name: "kill_switch"
+    display_name: "Emergency Kill Switch"
+    description: "Emergency system shutdown capability"
+    resource_type: "system_config"
+    action: "kill_switch"
+    requires_approval: true
+    approval_chain: ["super_admin"]
+
+  # ========== API & WEBHOOK PERMISSIONS ==========
+  api_key_manage:
+    name: "api_key_manage"
+    display_name: "Manage API Keys"
+    description: "Create and manage API keys"
+    resource_type: "api_key"
+    action: "manage"
+    requires_ownership: true
+
+  webhook_manage:
+    name: "webhook_manage"
+    display_name: "Manage Webhooks"
+    description: "Configure webhook endpoints"
+    resource_type: "webhook"
+    action: "manage"
+    requires_ownership: true
+
+  # ========== DEVICE PERMISSIONS ==========
+  device_read:
+    name: "device_read"
+    display_name: "View Device Data"
+    description: "Read device information and status"
+    resource_type: "device"
+    action: "read"
+
+  device_manage:
+    name: "device_manage"
+    display_name: "Manage Devices"
+    description: "Register and configure devices"
+    resource_type: "device"
+    action: "manage"
+    requires_ownership: true
+
+  device_attestation_review:
+    name: "device_attestation_review"
+    display_name: "Review Device Attestation"
+    description: "Review device security attestation"
+    resource_type: "device"
+    action: "attestation_review"
+
+  # ========== REPORTING PERMISSIONS ==========
+  report_merchant_performance:
+    name: "report_merchant_performance"
+    display_name: "Merchant Performance Reports"
+    description: "Generate merchant performance reports"
+    resource_type: "report"
+    action: "merchant_performance"
+    rate_limit_per_day: 20
+
+  report_financial:
+    name: "report_financial"
+    display_name: "Financial Reports"
+    description: "Generate financial and reconciliation reports"
+    resource_type: "report"
+    action: "financial"
+    rate_limit_per_day: 10
+
+  report_compliance:
+    name: "report_compliance"
+    display_name: "Compliance Reports"
+    description: "Generate compliance and audit reports"
+    resource_type: "report"
+    action: "compliance"
+    rate_limit_per_day: 5
+
+role_permissions:
+  # Super Admin - Full access
+  super_admin:
+    - { permission: "*", access_level: "admin" }
+
+  # Customer Service
+  customer_service_agent:
+    - { permission: "merchant_read", access_level: "read" }
+    - { permission: "transaction_read", access_level: "read" }
+    - { permission: "transaction_refund_small", access_level: "write" }
+    - { permission: "transaction_void", access_level: "write" }
+    - { permission: "dispute_read", access_level: "read" }
+
+  customer_service_lead:
+    - { permission: "merchant_read", access_level: "read" }
+    - { permission: "transaction_read", access_level: "read" }
+    - { permission: "transaction_refund_small", access_level: "write" }
+    - { permission: "transaction_refund_large", access_level: "write" }
+    - { permission: "transaction_void", access_level: "write" }
+    - { permission: "transaction_export", access_level: "write" }
+    - { permission: "dispute_read", access_level: "read" }
+    - { permission: "merchant_update_settings", access_level: "write" }
+
+  # Risk Management
+  risk_analyst:
+    - { permission: "merchant_read", access_level: "read" }
+    - { permission: "transaction_read", access_level: "read" }
+    - { permission: "transaction_read_sensitive", access_level: "read" }
+    - { permission: "merchant_place_hold", access_level: "write" }
+    - { permission: "device_read", access_level: "read" }
+    - { permission: "device_attestation_review", access_level: "write" }
+    - { permission: "kyc_tier_upgrade", access_level: "write" }
+
+  risk_lead:
+    - { permission: "merchant_read", access_level: "read" }
+    - { permission: "transaction_read", access_level: "read" }
+    - { permission: "transaction_read_sensitive", access_level: "read" }
+    - { permission: "merchant_place_hold", access_level: "write" }
+    - { permission: "device_read", access_level: "read" }
+    - { permission: "device_attestation_review", access_level: "write" }
+    - { permission: "kyc_tier_upgrade", access_level: "admin" }
+    - { permission: "system_config_read", access_level: "read" }
+
+  # Compliance
+  compliance_officer:
+    - { permission: "merchant_read", access_level: "read" }
+    - { permission: "kyc_document_read", access_level: "read" }
+    - { permission: "kyc_document_approve", access_level: "write" }
+    - { permission: "kyc_tier_upgrade", access_level: "admin" }
+    - { permission: "merchant_freeze_aml", access_level: "write" }
+    - { permission: "report_compliance", access_level: "write" }
+
+  kyc_ops_agent:
+    - { permission: "merchant_read", access_level: "read" }
+    - { permission: "kyc_document_read", access_level: "read" }
+    - { permission: "kyc_document_approve", access_level: "write" }
+    - { permission: "kyc_tier_upgrade", access_level: "write" }
+
+  # Finance
+  finance_user:
+    - { permission: "payout_read", access_level: "read" }
+    - { permission: "payout_approve_standard", access_level: "write" }
+    - { permission: "report_financial", access_level: "write" }
+    - { permission: "transaction_read", access_level: "read" }
+
+  finance_lead:
+    - { permission: "payout_read", access_level: "read" }
+    - { permission: "payout_approve_standard", access_level: "write" }
+    - { permission: "payout_approve_large", access_level: "write" }
+    - { permission: "payout_schedule_modify", access_level: "write" }
+    - { permission: "report_financial", access_level: "write" }
+    - { permission: "transaction_read", access_level: "read" }
+    - { permission: "transaction_refund_large", access_level: "write" }
+
+  # Disputes
+  disputes_specialist:
+    - { permission: "dispute_read", access_level: "read" }
+    - { permission: "dispute_manage", access_level: "write" }
+    - { permission: "dispute_representment", access_level: "write" }
+    - { permission: "transaction_read", access_level: "read" }
+
+  # Technical
+  technical_ops:
+    - { permission: "system_config_read", access_level: "read" }
+    - { permission: "device_read", access_level: "read" }
+    - { permission: "transaction_read", access_level: "read", conditions: { masked_data_only: true } }
+
+  developer:
+    - { permission: "transaction_read", access_level: "read", conditions: { masked_data_only: true } }
+    - { permission: "api_key_manage", access_level: "read" }
+
+  # Analytics
+  product_analytics:
+    - { permission: "report_merchant_performance", access_level: "read" }
+    - { permission: "transaction_read", access_level: "read", conditions: { aggregated_only: true } }
+
+  # Auditor
+  auditor:
+    - { permission: "merchant_read", access_level: "read", conditions: { masked_pii: true } }
+    - { permission: "transaction_read", access_level: "read", conditions: { masked_data_only: true } }
+    - { permission: "report_compliance", access_level: "read" }
+    - { permission: "system_config_read", access_level: "read" }
+
+  # ========== MERCHANT ROLES ==========
+  merchant_owner:
+    - { permission: "merchant_read", access_level: "admin", scope: "own_merchant" }
+    - { permission: "merchant_update_settings", access_level: "admin", scope: "own_merchant" }
+    - { permission: "merchant_manage_staff", access_level: "admin", scope: "own_merchant" }
+    - { permission: "transaction_read", access_level: "read", scope: "own_merchant" }
+    - { permission: "transaction_refund_small", access_level: "write", scope: "own_merchant" }
+    - { permission: "transaction_void", access_level: "write", scope: "own_merchant" }
+    - { permission: "payout_read", access_level: "read", scope: "own_merchant" }
+    - { permission: "device_manage", access_level: "admin", scope: "own_merchant" }
+    - { permission: "api_key_manage", access_level: "admin", scope: "own_merchant" }
+    - { permission: "webhook_manage", access_level: "admin", scope: "own_merchant" }
+    - { permission: "report_merchant_performance", access_level: "read", scope: "own_merchant" }
+
+  merchant_manager:
+    - { permission: "merchant_read", access_level: "read", scope: "own_merchant" }
+    - { permission: "merchant_manage_staff", access_level: "write", scope: "own_merchant" }
+    - { permission: "transaction_read", access_level: "read", scope: "own_merchant" }
+    - { permission: "transaction_refund_small", access_level: "write", scope: "own_merchant" }
+    - { permission: "device_read", access_level: "read", scope: "own_merchant" }
+    - { permission: "report_merchant_performance", access_level: "read", scope: "own_merchant" }
+
+  merchant_staff:
+    - { permission: "transaction_read", access_level: "read", scope: "own_device", conditions: { today_only: true } }
+    - { permission: "transaction_void", access_level: "write", scope: "own_device", conditions: { same_day_only: true } }
+
+  merchant_accountant:
+    - { permission: "payout_read", access_level: "read", scope: "own_merchant" }
+    - { permission: "report_financial", access_level: "read", scope: "own_merchant" }
+    - { permission: "report_merchant_performance", access_level: "read", scope: "own_merchant" }
+
+  merchant_developer:
+    - { permission: "api_key_manage", access_level: "admin", scope: "own_merchant" }
+    - { permission: "webhook_manage", access_level: "admin", scope: "own_merchant" }
+    - { permission: "transaction_read", access_level: "read", scope: "own_merchant" }
+
+  platform_partner:
+    - { permission: "merchant_read", access_level: "read", scope: "sub_merchants" }
+    - { permission: "transaction_read", access_level: "read", scope: "sub_merchants", conditions: { aggregated_only: true } }
+    - { permission: "report_merchant_performance", access_level: "read", scope: "sub_merchants" }
+
+security_policies:
+  session_management:
+    max_concurrent_sessions: 3
+    session_timeout_warning_minutes: 30
+    force_logout_on_ip_change: true
+    remember_device_days: 30
+
+  authentication:
+    password_policy:
+      min_length: 12
+      require_uppercase: true
+      require_lowercase: true
+      require_numbers: true
+      require_symbols: true
+      max_age_days: 90
+
+    lockout_policy:
+      max_attempts: 5
+      lockout_duration_minutes: 30
+      progressive_delay: true
+
+  access_control:
+    ip_allowlist_required_roles:
+      - "finance_lead"
+      - "compliance_officer"
+      - "super_admin"
+
+    rate_limiting:
+      api_calls_per_minute: 100
+      api_calls_per_hour: 5000
+      export_requests_per_day: 10
+
+  audit_requirements:
+    high_risk_actions:
+      - "transaction_refund_large"
+      - "merchant_freeze_aml"
+      - "payout_approve_large"
+      - "kill_switch"
+      - "system_config_update"
+
+    audit_retention_days: 2555  # 7 years
+    realtime_alerts:
+      - "multiple_failed_logins"
+      - "privilege_escalation_attempt"
+      - "large_data_export"

@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoftPOS Merchant Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-blue-600 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <h1 class="text-xl font-bold">SoftPOS Merchant Portal</h1>
+                    </div>
+                    <div class="hidden md:ml-10 md:flex md:space-x-8">
+                        <a href="#dashboard" class="px-3 py-2 rounded-md text-sm font-medium bg-blue-700">Dashboard</a>
+                        <a href="#transactions" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700">Transactions</a>
+                        <a href="#payouts" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700">Payouts</a>
+                        <a href="#devices" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700">Devices</a>
+                        <a href="#settings" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700">Settings</a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-sm">
+                        <span class="bg-blue-700 px-2 py-1 rounded">Tier: Standard</span>
+                    </div>
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" class="flex items-center space-x-2 hover:bg-blue-700 px-3 py-2 rounded-md">
+                            <i class="fas fa-store"></i>
+                            <span>Café Mocha</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                            <a href="#profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Business Profile</a>
+                            <a href="#api" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">API Management</a>
+                            <a href="#support" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Contact Support</a>
+                            <hr class="my-1">
+                            <a href="#logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Sign Out</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="flex h-screen pt-16" x-data="merchantPortal()">
+        <!-- Sidebar -->
+        <div class="w-64 bg-white shadow-lg">
+            <div class="p-4">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h2>
+                <nav class="space-y-2">
+                    <button @click="activeTab = 'dashboard'"
+                            :class="activeTab === 'dashboard' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'"
+                            class="w-full text-left px-3 py-2 rounded-md flex items-center space-x-2">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Dashboard</span>
+                    </button>
+
+                    <button @click="activeTab = 'transactions'"
+                            :class="activeTab === 'transactions' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'"
+                            class="w-full text-left px-3 py-2 rounded-md flex items-center space-x-2">
+                        <i class="fas fa-credit-card"></i>
+                        <span>Transactions</span>
+                    </button>
+
+                    <button @click="activeTab = 'payouts'"
+                            :class="activeTab === 'payouts' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'"
+                            class="w-full text-left px-3 py-2 rounded-md flex items-center space-x-2">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span>Payouts</span>
+                    </button>
+
+                    <button @click="activeTab = 'devices'"
+                            :class="activeTab === 'devices' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'"
+                            class="w-full text-left px-3 py-2 rounded-md flex items-center space-x-2">
+                        <i class="fas fa-mobile-alt"></i>
+                        <span>Devices</span>
+                        <span x-show="devices.filter(d => d.status === 'offline').length > 0"
+                              class="ml-auto bg-yellow-500 text-white text-xs rounded-full px-2 py-1"
+                              x-text="devices.filter(d => d.status === 'offline').length"></span>
+                    </button>
+
+                    <button @click="activeTab = 'staff'"
+                            :class="activeTab === 'staff' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'"
+                            class="w-full text-left px-3 py-2 rounded-md flex items-center space-x-2">
+                        <i class="fas fa-users"></i>
+                        <span>Staff Management</span>
+                    </button>
+
+                    <button @click="activeTab = 'reports'"
+                            :class="activeTab === 'reports' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'"
+                            class="w-full text-left px-3 py-2 rounded-md flex items-center space-x-2">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Reports</span>
+                    </button>
+
+                    <button @click="activeTab = 'settings'"
+                            :class="activeTab === 'settings' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'"
+                            class="w-full text-left px-3 py-2 rounded-md flex items-center space-x-2">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </button>
+                </nav>
+
+                <!-- Quick Stats -->
+                <div class="mt-8 p-4 bg-blue-50 rounded-lg">
+                    <h3 class="text-sm font-semibold text-blue-900 mb-2">Today's Summary</h3>
+                    <div class="space-y-2">
+                        <div class="flex justify-between">
+                            <span class="text-xs text-blue-700">Sales:</span>
+                            <span class="text-xs font-medium text-blue-900" x-text="'£' + (todaySummary.sales / 100).toFixed(2)"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-xs text-blue-700">Transactions:</span>
+                            <span class="text-xs font-medium text-blue-900" x-text="todaySummary.transactions"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-xs text-blue-700">Avg. Sale:</span>
+                            <span class="text-xs font-medium text-blue-900" x-text="'£' + (todaySummary.avgSale / 100).toFixed(2)"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 overflow-y-auto p-6">
+            <!-- Dashboard Tab -->
+            <div x-show="activeTab === 'dashboard'" class="space-y-6">
+                <div class="mb-6">
+                    <h1 class="text-2xl font-bold text-gray-900">Merchant Dashboard</h1>
+                    <p class="text-gray-600">Welcome back! Here's your business overview.</p>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border">
+                        <div class="flex items-center">
+                            <div class="p-2 bg-green-100 rounded-lg">
+                                <i class="fas fa-pound-sign text-green-600"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600">Today's Sales</p>
+                                <p class="text-2xl font-bold text-gray-900" x-text="'£' + (todaySummary.sales / 100).toFixed(2)"></p>
+                                <p class="text-xs text-green-600">+12% vs yesterday</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow-sm border">
+                        <div class="flex items-center">
+                            <div class="p-2 bg-blue-100 rounded-lg">
+                                <i class="fas fa-credit-card text-blue-600"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600">Transactions</p>
+                                <p class="text-2xl font-bold text-gray-900" x-text="todaySummary.transactions"></p>
+                                <p class="text-xs text-blue-600">+8% vs yesterday</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow-sm border">
+                        <div class="flex items-center">
+                            <div class="p-2 bg-purple-100 rounded-lg">
+                                <i class="fas fa-chart-line text-purple-600"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600">Success Rate</p>
+                                <p class="text-2xl font-bold text-gray-900">98.5%</p>
+                                <p class="text-xs text-purple-600">Excellent</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow-sm border">
+                        <div class="flex items-center">
+                            <div class="p-2 bg-yellow-100 rounded-lg">
+                                <i class="fas fa-clock text-yellow-600"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600">Next Payout</p>
+                                <p class="text-lg font-bold text-gray-900">Tomorrow</p>
+                                <p class="text-xs text-yellow-600">£2,847.92 pending</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Sales This Week</h3>
+                        <canvas id="salesChart" width="400" height="200"></canvas>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow-sm border">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Payment Methods</h3>
+                        <canvas id="paymentMethodsChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Transactions -->
+                <div class="bg-white rounded-lg shadow-sm border">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900">Recent Transactions</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4">
+                            <template x-for="transaction in recentTransactions.slice(0, 5)" :key="transaction.id">
+                                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                                            <i class="fas fa-credit-card text-green-600 text-sm"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-900" x-text="'****' + transaction.card_last_4"></p>
+                                            <p class="text-xs text-gray-500" x-text="transaction.created_at"></p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-sm font-medium text-gray-900" x-text="'£' + (transaction.amount / 100).toFixed(2)"></p>
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+                                              :class="transaction.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'"
+                                              x-text="transaction.status"></span>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        <div class="mt-4">
+                            <button @click="activeTab = 'transactions'" class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                                View all transactions →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transactions Tab -->
+            <div x-show="activeTab === 'transactions'" class="space-y-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Transactions</h1>
+                        <p class="text-gray-600">View and manage your payment transactions</p>
+                    </div>
+                    <div class="flex space-x-3">
+                        <select x-model="transactionFilter" class="px-3 py-2 border border-gray-300 rounded-md">
+                            <option value="all">All Status</option>
+                            <option value="completed">Completed</option>
+                            <option value="pending">Pending</option>
+                            <option value="failed">Failed</option>
+                        </select>
+                        <button @click="exportTransactions()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                            <i class="fas fa-download mr-2"></i>Export
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white shadow-sm rounded-lg overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <template x-for="transaction in filteredTransactions" :key="transaction.id">
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900" x-text="transaction.id"></div>
+                                            <div class="text-sm text-gray-500" x-text="'****' + transaction.card_last_4"></div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="'£' + (transaction.amount / 100).toFixed(2)"></td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+                                              :class="transaction.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                                      transaction.status === 'failed' ? 'bg-red-100 text-red-800' :
+                                                      'bg-yellow-100 text-yellow-800'"
+                                              x-text="transaction.status"></span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="transaction.created_at"></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <button @click="viewTransactionDetails(transaction)" class="text-blue-600 hover:text-blue-900 mr-3">View</button>
+                                        <button x-show="transaction.status === 'completed'" @click="issueRefund(transaction)" class="text-red-600 hover:text-red-900">Refund</button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Devices Tab -->
+            <div x-show="activeTab === 'devices'" class="space-y-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Device Management</h1>
+                        <p class="text-gray-600">Manage your SoftPOS devices and terminals</p>
+                    </div>
+                    <button @click="showAddDeviceModal = true" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                        <i class="fas fa-plus mr-2"></i>Add Device
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <template x-for="device in devices" :key="device.id">
+                        <div class="bg-white rounded-lg shadow-sm border p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                                        <i class="fas fa-mobile-alt text-blue-600"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-medium text-gray-900" x-text="device.name"></h3>
+                                        <p class="text-sm text-gray-500" x-text="device.model"></p>
+                                    </div>
+                                </div>
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+                                      :class="device.status === 'online' ? 'bg-green-100 text-green-800' :
+                                              device.status === 'offline' ? 'bg-red-100 text-red-800' :
+                                              'bg-yellow-100 text-yellow-800'"
+                                      x-text="device.status"></span>
+                            </div>
+
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Last Seen:</span>
+                                    <span class="text-gray-900" x-text="device.last_seen"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Today's Sales:</span>
+                                    <span class="text-gray-900" x-text="'£' + (device.today_sales / 100).toFixed(2)"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Battery:</span>
+                                    <span class="text-gray-900" x-text="device.battery + '%'"></span>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 flex space-x-2">
+                                <button @click="configureDevice(device)" class="flex-1 bg-blue-600 text-white py-2 px-3 rounded-md text-sm hover:bg-blue-700">
+                                    Configure
+                                </button>
+                                <button @click="restartDevice(device)" class="flex-1 bg-gray-600 text-white py-2 px-3 rounded-md text-sm hover:bg-gray-700">
+                                    Restart
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Staff Management Tab -->
+            <div x-show="activeTab === 'staff'" class="space-y-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Staff Management</h1>
+                        <p class="text-gray-600">Manage your team and access permissions</p>
+                    </div>
+                    <button @click="showAddStaffModal = true" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                        <i class="fas fa-user-plus mr-2"></i>Add Staff
+                    </button>
+                </div>
+
+                <div class="bg-white shadow-sm rounded-lg overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Staff Member</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <template x-for="staff in staffMembers" :key="staff.id">
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                                                <span class="text-sm font-medium text-gray-700" x-text="staff.initials"></span>
+                                            </div>
+                                            <div class="ml-4">
+                                                <div class="text-sm font-medium text-gray-900" x-text="staff.name"></div>
+                                                <div class="text-sm text-gray-500" x-text="staff.email"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800" x-text="staff.role"></span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="staff.last_login"></td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+                                              :class="staff.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+                                              x-text="staff.status"></span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <button @click="editStaff(staff)" class="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
+                                        <button @click="toggleStaffStatus(staff)" class="text-red-600 hover:text-red-900">
+                                            <span x-text="staff.status === 'active' ? 'Deactivate' : 'Activate'"></span>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function merchantPortal() {
+            return {
+                activeTab: 'dashboard',
+                transactionFilter: 'all',
+                showAddDeviceModal: false,
+                showAddStaffModal: false,
+
+                todaySummary: {
+                    sales: 284792,  // £2,847.92 in pence
+                    transactions: 127,
+                    avgSale: 2243   // £22.43 in pence
+                },
+
+                recentTransactions: [
+                    {
+                        id: 'TXN_789012',
+                        amount: 1250,
+                        status: 'completed',
+                        card_last_4: '1234',
+                        created_at: '2024-01-15 16:45'
+                    },
+                    {
+                        id: 'TXN_789013',
+                        amount: 3499,
+                        status: 'completed',
+                        card_last_4: '5678',
+                        created_at: '2024-01-15 16:30'
+                    },
+                    {
+                        id: 'TXN_789014',
+                        amount: 850,
+                        status: 'pending',
+                        card_last_4: '9012',
+                        created_at: '2024-01-15 16:15'
+                    }
+                ],
+
+                devices: [
+                    {
+                        id: 'DEV_001',
+                        name: 'Till 1 - Counter',
+                        model: 'iPhone 12 Pro',
+                        status: 'online',
+                        last_seen: '2 min ago',
+                        today_sales: 89340,
+                        battery: 78
+                    },
+                    {
+                        id: 'DEV_002',
+                        name: 'Till 2 - Drive Thru',
+                        model: 'Samsung Galaxy S21',
+                        status: 'online',
+                        last_seen: '5 min ago',
+                        today_sales: 156430,
+                        battery: 45
+                    },
+                    {
+                        id: 'DEV_003',
+                        name: 'Mobile Terminal',
+                        model: 'iPad Air',
+                        status: 'offline',
+                        last_seen: '2 hours ago',
+                        today_sales: 39022,
+                        battery: 12
+                    }
+                ],
+
+                staffMembers: [
+                    {
+                        id: 1,
+                        name: 'Sarah Johnson',
+                        email: 'sarah@cafemocha.com',
+                        role: 'Manager',
+                        status: 'active',
+                        last_login: '2024-01-15 14:30',
+                        initials: 'SJ'
+                    },
+                    {
+                        id: 2,
+                        name: 'Mike Chen',
+                        email: 'mike@cafemocha.com',
+                        role: 'Cashier',
+                        status: 'active',
+                        last_login: '2024-01-15 16:45',
+                        initials: 'MC'
+                    },
+                    {
+                        id: 3,
+                        name: 'Emma Wilson',
+                        email: 'emma@cafemocha.com',
+                        role: 'Cashier',
+                        status: 'inactive',
+                        last_login: '2024-01-12 18:00',
+                        initials: 'EW'
+                    }
+                ],
+
+                get filteredTransactions() {
+                    if (this.transactionFilter === 'all') {
+                        return this.recentTransactions;
+                    }
+                    return this.recentTransactions.filter(t => t.status === this.transactionFilter);
+                },
+
+                init() {
+                    this.$nextTick(() => {
+                        this.initCharts();
+                    });
+                },
+
+                initCharts() {
+                    // Sales Chart
+                    const salesCtx = document.getElementById('salesChart');
+                    if (salesCtx) {
+                        new Chart(salesCtx, {
+                            type: 'line',
+                            data: {
+                                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                                datasets: [{
+                                    label: 'Sales (£)',
+                                    data: [2100, 1950, 2400, 2200, 2847, 3100, 2600],
+                                    borderColor: 'rgb(59, 130, 246)',
+                                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                    tension: 0.1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: {
+                                    legend: {
+                                        display: false
+                                    }
+                                },
+                                scales: {
+                                    y: {
+                                        beginAtZero: true
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    // Payment Methods Chart
+                    const paymentCtx = document.getElementById('paymentMethodsChart');
+                    if (paymentCtx) {
+                        new Chart(paymentCtx, {
+                            type: 'doughnut',
+                            data: {
+                                labels: ['Contactless', 'Chip & PIN', 'Online'],
+                                datasets: [{
+                                    data: [65, 30, 5],
+                                    backgroundColor: [
+                                        'rgb(34, 197, 94)',
+                                        'rgb(59, 130, 246)',
+                                        'rgb(168, 85, 247)'
+                                    ]
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: {
+                                    legend: {
+                                        position: 'bottom'
+                                    }
+                                }
+                            }
+                        });
+                    }
+                },
+
+                configureDevice(device) {
+                    console.log('Configuring device:', device);
+                },
+
+                restartDevice(device) {
+                    alert(`Restarting ${device.name}...`);
+                },
+
+                exportTransactions() {
+                    alert('Exporting transactions...');
+                },
+
+                issueRefund(transaction) {
+                    if (confirm(`Issue refund for transaction ${transaction.id}?`)) {
+                        alert('Refund initiated');
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
