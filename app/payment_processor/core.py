@@ -71,13 +71,20 @@ class CardData:
     @staticmethod
     def _luhn_check(card_number: str) -> bool:
         """Luhn algorithm for card number validation"""
+        # Remove spaces and convert to digits
         digits = [int(d) for d in card_number.replace(" ", "")]
-        checksum = sum(digits[-1::-2])
 
-        for d in digits[-2::-2]:
-            checksum += sum(divmod(d * 2, 10))
+        # Double every second digit from right to left
+        for i in range(len(digits) - 2, -1, -2):
+            digits[i] *= 2
+            if digits[i] > 9:
+                digits[i] -= 9
 
-        return checksum % 10 == 0
+        # Sum all digits
+        total = sum(digits)
+
+        # Valid if total is divisible by 10
+        return total % 10 == 0
 
     def get_card_type(self) -> CardType:
         """Determine card type from PAN"""

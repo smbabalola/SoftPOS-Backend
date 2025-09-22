@@ -32,3 +32,6 @@ xlsxwriter==3.1.9
 # Testing
 pytest==7.4.3
 pytest-asyncio==0.21.1
+
+# Additional dependencies for custom payment processor
+pycryptodome==3.18.0
