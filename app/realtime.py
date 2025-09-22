@@ -379,39 +379,31 @@ async def start_realtime_tasks():
 # Integration with existing monitoring system
 async def integrate_with_monitoring():
     """Integrate real-time notifications with monitoring system."""
-    from .monitoring import monitoring_engine
-    from .webhooks import webhook_manager
-    from .terminal_management import terminal_manager
+    try:
+        from .monitoring import monitoring_engine
 
-    # Override monitoring engine's alert creation to send real-time notifications
-    original_create_alert = monitoring_engine.create_alert
+        # Override monitoring engine's alert creation to send real-time notifications
+        original_create_alert = monitoring_engine.create_alert
 
-    async def create_alert_with_notification(*args, **kwargs):
-        alert_id = await original_create_alert(*args, **kwargs)
+        async def create_alert_with_notification(*args, **kwargs):
+            alert_id = await original_create_alert(*args, **kwargs)
 
-        # Send real-time notification
-        if alert_id in monitoring_engine.alerts:
-            alert = monitoring_engine.alerts[alert_id]
-            await realtime_notifier.notify_system_alert({
-                "alert_id": alert.alert_id,
-                "title": alert.title,
-                "description": alert.description,
-                "severity": alert.severity.value,
-                "component": alert.component
-            })
+            # Send real-time notification
+            if alert_id in monitoring_engine.alerts:
+                alert = monitoring_engine.alerts[alert_id]
+                await realtime_notifier.notify_system_alert({
+                    "alert_id": alert.alert_id,
+                    "title": alert.title,
+                    "description": alert.description,
+                    "severity": alert.severity.value,
+                    "component": alert.component
+                })
 
-        return alert_id
+            return alert_id
 
-    monitoring_engine.create_alert = create_alert_with_notification
+        monitoring_engine.create_alert = create_alert_with_notification
 
-    # Override webhook delivery notifications
-    original_send_alert_notification = webhook_manager._send_alert_notification
+        logger.info("Real-time monitoring integration enabled")
 
-    async def send_alert_with_realtime(alert):
-        await original_send_alert_notification(alert)
-
-        # Send real-time notification for webhook delivery updates
-        # This would be more sophisticated in production
-        pass
-
-    webhook_manager._send_alert_notification = send_alert_with_realtime
+    except ImportError as e:
+        logger.info("Monitoring integration skipped", reason=str(e))
