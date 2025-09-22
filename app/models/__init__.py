@@ -4,11 +4,20 @@ SoftPOS Data Models
 Database models and Pydantic schemas for the SoftPOS platform.
 """
 
-# Import database models
+# Import API models (Pydantic schemas) - these are always needed
+from .api import (
+    APIError, HealthResponse, PaymentStatus, CaptureMode, Channel,
+    PaymentIntentCreate, PaymentIntent, PaymentConfirm, Payment,
+    MerchantStatus, Merchant, MerchantApplicationRequest,
+    TransactionSummary, RefundRequest, RefundResponse,
+    PaginationParams, PaginatedResponse
+)
+
+# Import database models with fallbacks
 try:
     from .users import User
 except ImportError:
-    pass
+    User = None
 
 try:
     from .rbac import (
@@ -17,19 +26,9 @@ try:
         UserType, AccessLevel, ResourceType
     )
 except ImportError:
-    pass
-
-# Import API models (Pydantic schemas)
-try:
-    from .api import (
-        APIError, HealthResponse, PaymentStatus, CaptureMode, Channel,
-        PaymentIntentCreate, PaymentIntent, PaymentConfirm, Payment,
-        MerchantStatus, Merchant, MerchantApplicationRequest,
-        TransactionSummary, RefundRequest, RefundResponse,
-        PaginationParams, PaginatedResponse
-    )
-except ImportError:
-    pass
+    Role = Permission = UserRoleAssignment = None
+    PermissionGrant = AccessSession = AuditLog = None
+    ApprovalWorkflow = UserType = AccessLevel = ResourceType = None
 
 # Export all models
 __all__ = [
