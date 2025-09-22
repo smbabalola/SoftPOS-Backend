@@ -339,12 +339,12 @@ class TransactionProcessor:
         await asyncio.sleep(0.1)
 
         # Simulate different responses based on card number
-        if card_data.pan.endswith("0000"):
+        if card_data.pan.endswith("0002"):
             return {
                 "approved": False,
                 "decline_reason": "Insufficient funds"
             }
-        elif card_data.pan.endswith("1111"):
+        elif card_data.pan.endswith("0069"):
             return {
                 "approved": False,
                 "decline_reason": "Card blocked"

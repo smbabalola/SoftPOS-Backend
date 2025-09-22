@@ -103,16 +103,16 @@ async def get_test_cards():
     return {
         "test_cards": {
             "success": {
-                "visa": "4111111111111112",
+                "visa": "4242424242424242",
                 "mastercard": "5555555555554444",
                 "description": "These cards will be approved"
             },
             "decline_insufficient_funds": {
-                "visa": "4111111111110000",
+                "visa": "4000000000000002",
                 "description": "Will be declined with 'Insufficient funds'"
             },
             "decline_blocked": {
-                "visa": "4111111111111111",
+                "visa": "4000000000000069",
                 "description": "Will be declined with 'Card blocked'"
             }
         },
