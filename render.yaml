@@ -4,8 +4,8 @@ services:
     env: python
     plan: free
     region: oregon
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main_simple:app --host 0.0.0.0 --port $PORT
+    buildCommand: cd services/api && pip install -r requirements.txt
+    startCommand: cd services/api && uvicorn app.main_simple:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
         generateValue: true
