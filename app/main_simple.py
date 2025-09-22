@@ -1,9 +1,15 @@
 from __future__ import annotations
+import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .startup import startup
+# Try to import startup, fallback to basic setup if it fails
+try:
+    from .startup import startup
+    HAS_DATABASE = True
+except ImportError:
+    HAS_DATABASE = False
 
 app = FastAPI(title="SoftPOS API", version="1.0.0")
 
@@ -20,7 +26,12 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup_event():
-    await startup()
+    if HAS_DATABASE:
+        try:
+            await startup()
+        except Exception as e:
+            print(f"Database startup failed: {e}")
+            # Continue without database for now
 
 
 @app.get("/health")
